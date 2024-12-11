@@ -130,7 +130,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         address _swapRouter,
         address payable _feeAddress,
         address _multiSignature
-    ) multiSignatureClient(_multiSignature) public {
+    ) multiSignatureClient(_multiSignature) public { //这边是调用多签函数的构造器
         require(_oracle != address(0), "Is zero address");
         require(_swapRouter != address(0), "Is zero address");
         require(_feeAddress != address(0), "Is zero address");
@@ -146,7 +146,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
      * @dev Set the lend fee and borrow fee
      * @notice Only allow administrators to operate
      */
-    function setFee(uint256 _lendFee,uint256 _borrowFee) validCall external{
+    function setFee(uint256 _lendFee,uint256 _borrowFee) validCall external{  //validCall多签实现只有管理员才能设置
         lendFee = _lendFee;
         borrowFee = _borrowFee;
         emit SetFee(_lendFee, _borrowFee);
@@ -205,19 +205,19 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
 
         // 推入基础池信息
         poolBaseInfo.push(PoolBaseInfo({
-            settleTime: _settleTime,
-            endTime: _endTime,
-            interestRate: _interestRate,
-            maxSupply: _maxSupply,
-            lendSupply:0,
-            borrowSupply:0,
-            martgageRate: _martgageRate,
-            lendToken:_lendToken,
-            borrowToken:_borrowToken,
-            state: defaultChoice,
-            spCoin: IDebtToken(_spToken),
-            jpCoin: IDebtToken(_jpToken),
-            autoLiquidateThreshold:_autoLiquidateThreshold
+            settleTime: _settleTime,                            //结算时间
+            endTime: _endTime,                                  //结束时间
+            interestRate: _interestRate,                        //利率
+            maxSupply: _maxSupply,                              //最大供应量
+            lendSupply:0,                                       //可以借出去的钱
+            borrowSupply:0,                                     //借入的钱
+            martgageRate: _martgageRate,                        //抵押率
+            lendToken:_lendToken,                               //借出代币
+            borrowToken:_borrowToken,                           //借入代币
+            state: defaultChoice,                               //状态
+            spCoin: IDebtToken(_spToken),            //初始化spCoin使其可以使用接口所有功能
+            jpCoin: IDebtToken(_jpToken),            //初始化jpToken使其可以使用接口所有功能
+            autoLiquidateThreshold:_autoLiquidateThreshold      //自动清算阈值
         }));
         // 推入池数据信息
         poolDataInfo.push(PoolDataInfo({
@@ -246,10 +246,16 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
      */
     function depositLend(uint256 _pid, uint256 _stakeAmount) external payable nonReentrant notPause timeBefore(_pid) stateMatch(_pid){
         // 时间和状态的限制
+
+        //根据池索引锁定到对应的池
         PoolBaseInfo storage pool = poolBaseInfo[_pid];
+
+        //获取用户的借款信息
         LendInfo storage lendInfo = userLendInfo[msg.sender][_pid];
         // 边界条件
+        //质押金<=最大供应量-借款供应? 为什么
         require(_stakeAmount <= (pool.maxSupply).sub(pool.lendSupply), "depositLend: 数量超过限制");
+
         uint256 amount = getPayableAmount(pool.lendToken,_stakeAmount);
         require(amount > minAmount, "depositLend: 少于最小金额");
         // 保存借款用户信息
@@ -480,6 +486,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
             // 要求当前时间大于匹配时间
             require(block.timestamp > pool.settleTime, "withdrawBorrow: less than match time");
         }
+    }
        /**
      * @dev 紧急借款提取
      * @notice 在极端情况下，总存款为0，或者总保证金为0，在某些极端情况下，如总存款为0或总保证金为0时，借款者可以进行紧急提取。首先，代码会获取池子的基本信息和借款者的借款信息，然后检查借款供应和借款者的质押金额是否大于0，以及借款者是否已经进行过退款。如果这些条件都满足，那么就会执行赎回操作，并标记借款者已经退款。最后，触发一个紧急借款提取的事件。
