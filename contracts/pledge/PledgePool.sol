@@ -627,9 +627,9 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         }
 
         // 计算剩余的借款金额并赎回借款费
-        uint256 remianNowAmount = data.settleAmountBorrow.sub(amountSell);
-        uint256 remianBorrowAmount = redeemFees(borrowFee,pool.borrowToken,remianNowAmount);
-        data.finishAmountBorrow = remianBorrowAmount;
+        uint256 remainNowAmount = data.settleAmountBorrow.sub(amountSell);
+        uint256 remainBorrowAmount = redeemFees(borrowFee,pool.borrowToken,remainNowAmount);
+        data.finishAmountBorrow = remainBorrowAmount;
 
         // 更新池子状态为完成
         pool.state = PoolState.FINISH;
@@ -686,9 +686,9 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
             data.liquidationAmountLend = amountIn;
         }
         // liquidationAmounBorrow  借款费用
-        uint256 remianNowAmount = data.settleAmountBorrow.sub(amountSell); // 剩余的现在的金额
-        uint256 remianBorrowAmount = redeemFees(borrowFee,pool.borrowToken,remianNowAmount); // 剩余的借款金额
-        data.liquidationAmounBorrow = remianBorrowAmount;
+        uint256 remainNowAmount = data.settleAmountBorrow.sub(amountSell); // 剩余的现在的金额
+        uint256 remainBorrowAmount = redeemFees(borrowFee,pool.borrowToken,remainNowAmount); // 剩余的借款金额
+        data.liquidationAmounBorrow = remainBorrowAmount;
         // 更新池子状态
         pool.state = PoolState.LIQUIDATION;
          // 事件
