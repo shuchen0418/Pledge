@@ -253,7 +253,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         //获取用户的借款信息
         LendInfo storage lendInfo = userLendInfo[msg.sender][_pid];
         // 边界条件
-        //质押金<=最大供应量-借款供应? 为什么
+        //TODO:质押金<=最大供应量-借款供应? 为什么
         require(_stakeAmount <= (pool.maxSupply).sub(pool.lendSupply), "depositLend: 数量超过限制");
 
         uint256 amount = getPayableAmount(pool.lendToken,_stakeAmount);
@@ -261,6 +261,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         // 保存借款用户信息
         lendInfo.hasNoClaim = false;
         lendInfo.hasNoRefund = false;
+        //TODO:pool.lendToken == address(0)什么意思
         if (pool.lendToken == address(0)){
             lendInfo.stakeAmount = lendInfo.stakeAmount.add(msg.value);
             pool.lendSupply = pool.lendSupply.add(msg.value);
