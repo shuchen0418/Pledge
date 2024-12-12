@@ -41,7 +41,7 @@ contract MockPledgePool is ReentrancyGuard, Ownable, SafeTransfer{
         uint256 endTime;            // finish time
         uint256 interestRate;       // Fixed interest on the pool, The unit is 1e8 (1e8)
         uint256 maxSupply;          // Maximum pool limit
-        uint256 lendSupply;         // Current lend actual deposit
+        uint256 lendSupply;         // Current   actual deposit
         uint256 borrowSupply;       // Current borrow actual deposit
         uint256 martgageRate;       // Pool mortgage rate, The unit is 1e8 (1e8)
         address lendToken;          // lend stake token address (BUSD..)

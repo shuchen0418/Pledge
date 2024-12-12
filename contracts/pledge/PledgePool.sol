@@ -64,7 +64,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         uint256 settleAmountBorrow;     // 结算时的实际借款金额
         uint256 finishAmountLend;       // 完成时的实际出借金额
         uint256 finishAmountBorrow;     // 完成时的实际借款金额
-        uint256 liquidationAmounLend;   // 清算时的实际出借金额
+        uint256 liquidationAmountLend;   // 清算时的实际出借金额
         uint256 liquidationAmounBorrow; // 清算时的实际借款金额
     }
     // total data pool
@@ -92,38 +92,38 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     mapping (address => mapping (uint256 => LendInfo)) public userLendInfo;
 
         // 事件
-        // 存款借出事件，from是借出者地址，token是借出的代币地址，amount是借出的数量，mintAmount是生成的数量
-    event DepositLend(address indexed from,address indexed token,uint256 amount,uint256 mintAmount); 
+        // TODO:存款借出事件，from是借出者地址，token是借出的代币地址，amount是借出的数量，mintAmount是生成的数量 这个不是质押事件吗
+    event DepositLend(address indexed from,address indexed token,uint256 amount,uint256 mintAmount);
     // 借出退款事件，from是退款者地址，token是退款的代币地址，refund是退款的数量
-    event RefundLend(address indexed from, address indexed token, uint256 refund); 
+    event RefundLend(address indexed from, address indexed token, uint256 refund);
     // 借出索赔事件，from是索赔者地址，token是索赔的代币地址，amount是索赔的数量
-    event ClaimLend(address indexed from, address indexed token, uint256 amount); 
+    event ClaimLend(address indexed from, address indexed token, uint256 amount);
      // 提取借出事件，from是提取者地址，token是提取的代币地址，amount是提取的数量，burnAmount是销毁的数量
     event WithdrawLend(address indexed from,address indexed token,uint256 amount,uint256 burnAmount);
     // 存款借入事件，from是借入者地址，token是借入的代币地址，amount是借入的数量，mintAmount是生成的数量
-    event DepositBorrow(address indexed from,address indexed token,uint256 amount,uint256 mintAmount); 
+    event DepositBorrow(address indexed from,address indexed token,uint256 amount,uint256 mintAmount);
      // 借入退款事件，from是退款者地址，token是退款的代币地址，refund是退款的数量
     event RefundBorrow(address indexed from, address indexed token, uint256 refund);
     // 借入索赔事件，from是索赔者地址，token是索赔的代币地址，amount是索赔的数量
-    event ClaimBorrow(address indexed from, address indexed token, uint256 amount); 
+    event ClaimBorrow(address indexed from, address indexed token, uint256 amount);
     // 提取借入事件，from是提取者地址，token是提取的代币地址，amount是提取的数量，burnAmount是销毁的数量
-    event WithdrawBorrow(address indexed from,address indexed token,uint256 amount,uint256 burnAmount); 
+    event WithdrawBorrow(address indexed from,address indexed token,uint256 amount,uint256 burnAmount);
     // 交换事件，fromCoin是交换前的币种地址，toCoin是交换后的币种地址，fromValue是交换前的数量，toValue是交换后的数量
-    event Swap(address indexed fromCoin,address indexed toCoin,uint256 fromValue,uint256 toValue); 
+    event Swap(address indexed fromCoin,address indexed toCoin,uint256 fromValue,uint256 toValue);
     // 紧急借入提取事件，from是提取者地址，token是提取的代币地址，amount是提取的数量
-    event EmergencyBorrowWithdrawal(address indexed from, address indexed token, uint256 amount); 
+    event EmergencyBorrowWithdrawal(address indexed from, address indexed token, uint256 amount);
      // 紧急借出提取事件，from是提取者地址，token是提取的代币地址，amount是提取的数量
     event EmergencyLendWithdrawal(address indexed from, address indexed token, uint256 amount);
     // 状态改变事件，pid是项目id，beforeState是改变前的状态，afterState是改变后的状态
-    event StateChange(uint256 indexed pid, uint256 indexed beforeState, uint256 indexed afterState); 
+    event StateChange(uint256 indexed pid, uint256 indexed beforeState, uint256 indexed afterState);
      // 设置费用事件，newLendFee是新的借出费用，newBorrowFee是新的借入费用
     event SetFee(uint256 indexed newLendFee, uint256 indexed newBorrowFee);
     // 设置交换路由器地址事件，oldSwapAddress是旧的交换地址，newSwapAddress是新的交换地址
-    event SetSwapRouterAddress(address indexed oldSwapAddress, address indexed newSwapAddress); 
+    event SetSwapRouterAddress(address indexed oldSwapAddress, address indexed newSwapAddress);
      // 设置费用地址事件，oldFeeAddress是旧的费用地址，newFeeAddress是新的费用地址
     event SetFeeAddress(address indexed oldFeeAddress, address indexed newFeeAddress);
     // 设置最小数量事件，oldMinAmount是旧的最小数量，newMinAmount是新的最小数量
-    event SetMinAmount(uint256 indexed oldMinAmount, uint256 indexed newMinAmount); 
+    event SetMinAmount(uint256 indexed oldMinAmount, uint256 indexed newMinAmount);
 
     constructor(
         address _oracle,
@@ -225,7 +225,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
             settleAmountBorrow:0,
             finishAmountLend:0,
             finishAmountBorrow:0,
-            liquidationAmounLend:0,
+            liquidationAmountLend:0,
             liquidationAmounBorrow:0
         }));
     }
@@ -253,7 +253,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         //获取用户的借款信息
         LendInfo storage lendInfo = userLendInfo[msg.sender][_pid];
         // 边界条件
-        //TODO:质押金<=最大供应量-借款供应? 为什么
+        //质押金<=最大供应量-借款供应 质押金不能超过最大供应量
         require(_stakeAmount <= (pool.maxSupply).sub(pool.lendSupply), "depositLend: 数量超过限制");
 
         uint256 amount = getPayableAmount(pool.lendToken,_stakeAmount);
@@ -298,7 +298,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     }
 
      /**
-     * @dev 存款人接收 sp_toke,主要功能是让存款人领取 sp_token
+     * @dev 存款人接收 sp_token,主要功能是让存款人领取 sp_token
      * @notice 池状态不等于匹配和未完成
      * @param _pid 是池索引
      */
@@ -310,16 +310,17 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         require(lendInfo.stakeAmount > 0, "claimLend: 不能领取 sp_token"); // 需要用户的质押金额大于0
         require(!lendInfo.hasNoClaim,"claimLend: 不能再次领取"); // 用户不能再次领取
         // 用户份额 = 当前质押金额 / 总金额
-        uint256 userShare = lendInfo.stakeAmount.mul(calDecimal).div(pool.lendSupply); 
+        uint256 userShare = lendInfo.stakeAmount.mul(calDecimal).div(pool.lendSupply);
         // totalSpAmount = settleAmountLend
         uint256 totalSpAmount = data.settleAmountLend; // 总的Sp金额等于借款结算金额
         // 用户 sp 金额 = totalSpAmount * 用户份额
-        uint256 spAmount = totalSpAmount.mul(userShare).div(calDecimal); 
+        uint256 spAmount = totalSpAmount.mul(userShare).div(calDecimal);
         // 铸造 sp token
-        pool.spCoin.mint(msg.sender, spAmount); 
+        pool.spCoin.mint(msg.sender, spAmount);
         // 更新领取标志
-        lendInfo.hasNoClaim = true; 
-        emit ClaimLend(msg.sender, pool.borrowToken, spAmount); // 触发领取借款事件
+        lendInfo.hasNoClaim = true;
+
+        emit ClaimLend(msg.sender, pool.lendToken, spAmount); // 触发领取借款事件
     }
 
         /**
@@ -332,11 +333,11 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         PoolBaseInfo storage pool = poolBaseInfo[_pid];
         PoolDataInfo storage data = poolDataInfo[_pid];
         require(_spAmount > 0, 'withdrawLend: 取款金额为零');
-        // 销毁 sp_token
+        //TODO:销毁 sp_token 为什么可以使用burn这个方法
         pool.spCoin.burn(msg.sender,_spAmount);
         // 计算销毁份额
         uint256 totalSpAmount = data.settleAmountLend;
-        // sp份额 = _spAmount/totalSpAmount
+        // sp份额 = _spAmount/totalSpAmount 需要提取的金额/总金额
         uint256 spShare = _spAmount.mul(calDecimal).div(totalSpAmount);
         // 完成
         if (pool.state == PoolState.FINISH){
@@ -349,9 +350,9 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         }
         // 清算
         if (pool.state == PoolState.LIQUIDATION) {
-            require(block.timestamp > pool.settleTime, "withdrawLend: 少于匹配时间");
+            require(block.timestamp > pool.settleTime, "withdrawLend: 少于清算时间");
             // 赎回金额
-            uint256 redeemAmount = data.liquidationAmounLend.mul(spShare).div(calDecimal);
+            uint256 redeemAmount = data.liquidationAmountLend.mul(spShare).div(calDecimal);
             // 退款动作
              _redeem(msg.sender,pool.lendToken,redeemAmount);
             emit WithdrawLend(msg.sender,pool.lendToken,redeemAmount,_spAmount);
@@ -459,7 +460,11 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
     }
 
        /**
-     * @dev 借款人提取剩余的保证金，这个函数首先检查提取的金额是否大于0，然后销毁相应数量的JPtoken。接着，它计算JPtoken的份额，并根据池的状态（完成或清算）进行相应的操作。如果池的状态是完成，它会检查当前时间是否大于结束时间，然后计算赎回金额并进行赎回。如果池的状态是清算，它会检查当前时间是否大于匹配时间，然后计算赎回金额并进行赎回。
+     * @dev 借款人提取剩余的保证金，这个函数首先检查提取的金额是否大于0，
+     *      然后销毁相应数量的JPtoken。
+     *      接着，它计算JPtoken的份额，并根据池的状态（完成或清算）进行相应的操作。
+     *      如果池的状态是完成，它会检查当前时间是否大于结束时间，然后计算赎回金额并进行赎回。
+     *      如果池的状态是清算，它会检查当前时间是否大于匹配时间，然后计算赎回金额并进行赎回。
      * @param _pid 是池状态
      * @param _jpAmount 是用户销毁JPtoken的数量
      */
@@ -534,12 +539,16 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         require(block.timestamp > poolBaseInfo[_pid].settleTime, "settle: 小于结算时间");
         // 池子的状态必须是匹配状态
         require(pool.state == PoolState.MATCH, "settle: 池子状态必须是匹配");
+        //       1000                   800
         if (pool.lendSupply > 0 && pool.borrowSupply > 0) {
             // 获取标的物价格
+            //price[0]=2 price[1]=1
             uint256[2]memory prices = getUnderlyingPriceView(_pid);
             // 总保证金价值 = 保证金数量 * 保证金价格
+            //      400
             uint256 totalValue = pool.borrowSupply.mul(prices[1].mul(calDecimal).div(prices[0])).div(calDecimal);
             // 转换为稳定币价值
+            //      266.6666666666667                                           1.5
             uint256 actualValue = totalValue.mul(baseDecimal).div(pool.martgageRate);
             if (pool.lendSupply > actualValue){
                 // 总借款大于总借出
@@ -672,9 +681,9 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
             uint256 feeAmount = amountIn.sub(lendAmount) ; // 费用金额
             // 贷款费用
             _redeem(feeAddress,pool.lendToken, feeAmount);
-            data.liquidationAmounLend = amountIn.sub(feeAmount);
+            data.liquidationAmountLend = amountIn.sub(feeAmount);
         }else {
-            data.liquidationAmounLend = amountIn;
+            data.liquidationAmountLend = amountIn;
         }
         // liquidationAmounBorrow  借款费用
         uint256 remianNowAmount = data.settleAmountBorrow.sub(amountSell); // 剩余的现在的金额
@@ -775,7 +784,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         // 将借款和贷款的token添加到资产数组中
         assets[0] = uint256(pool.lendToken);
         assets[1] = uint256(pool.borrowToken);
-        // 从预言机获取资产的价格
+        // 从预言机获取资产的价格（相较于市场可借款的价格 以及 已经借款的价格）
         uint256[]memory prices = oracle.getPrices(assets);
         // 返回价格数组
         return [prices[0],prices[1]];

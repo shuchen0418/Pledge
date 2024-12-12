@@ -18,7 +18,7 @@ contract SafeTransfer{
      * @return return amount
      */
     function getPayableAmount(address token,uint256 amount) internal returns (uint256) {
-        if (token == address(0)){
+        if (token == address(0)){ //ETH
             amount = msg.value;
         }else if (amount > 0){
             IERC20 oToken = IERC20(token);
