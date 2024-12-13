@@ -551,12 +551,16 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
             //      266.6666666666667                                           1.5
             uint256 actualValue = totalValue.mul(baseDecimal).div(pool.martgageRate);
             if (pool.lendSupply > actualValue){
-                // 总借款大于总借出
+                // 池子里可借出的钱>抵押物价值转换的钱
+                //data.settleAmountLend = 抵押物价值转换的钱
                 data.settleAmountLend = actualValue;
+                //data.settleAmountBorrow = 抵押物无需转换的钱
                 data.settleAmountBorrow = pool.borrowSupply;
             } else {
-                // 总借款小于总借出
+                // 池子里可借出的钱<抵押物价值转换的钱
+                //data.settleAmountLend = 池子可借出的钱
                 data.settleAmountLend = pool.lendSupply;
+                //data.settleAmountBorrow = 池子可借出的钱乘以抵押率
                 data.settleAmountBorrow = pool.lendSupply.mul(pool.martgageRate).div(prices[1].mul(baseDecimal).div(prices[0]));
             }
             // 更新池子状态
@@ -610,7 +614,7 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         // 计算销售金额 = 贷款金额*(1+贷款费)
         uint256 sellAmount = lendAmount.mul(lendFee.add(baseDecimal)).div(baseDecimal);
 
-        // 执行交换操作
+        // 执行交换操作                                                       router地址      borrowToken     lendToken      sellAmount
         (uint256 amountSell,uint256 amountIn) = _sellExactAmount(swapRouter,token0,token1,sellAmount);
 
         // 验证交换后的金额是否大于等于贷款金额
@@ -745,9 +749,11 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
       * @dev Swap
       */
     function _swap(address _swapRouter,address token0,address token1,uint256 amount0) internal returns (uint256) {
+        //如果token0不是ETH，给予无限授权
         if (token0 != address(0)){
             _safeApprove(token0, address(_swapRouter), uint256(-1));
         }
+        //如果token0不是ETH，给予无限授权
         if (token1 != address(0)){
             _safeApprove(token1, address(_swapRouter), uint256(-1));
         }
@@ -755,10 +761,13 @@ contract PledgePool is ReentrancyGuard, SafeTransfer, multiSignatureClient{
         address[] memory path = _getSwapPath(_swapRouter,token0,token1);
         uint256[] memory amounts;
         if(token0 == address(0)){
+            //token0是ETH
             amounts = IUniswap.swapExactETHForTokens{value:amount0}(0, path,address(this), now+30);
         }else if(token1 == address(0)){
+            //token1是ETH
             amounts = IUniswap.swapExactTokensForETH(amount0,0, path, address(this), now+30);
         }else{
+            //都不是ETH
             amounts = IUniswap.swapExactTokensForTokens(amount0,0, path, address(this), now+30);
         }
         emit Swap(token0,token1,amounts[0],amounts[amounts.length-1]);

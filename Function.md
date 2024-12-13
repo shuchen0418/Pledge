@@ -53,3 +53,9 @@ address _spToken, address _jpToken, uint256 _autoLiquidateThreshold) public vali
 
 18.function checkoutSettle(uint256 _pid) public view returns(bool)
    判断是否已经结算
+
+19.function settle(uint256 _pid) public validCall
+   结算
+
+20.function checkoutFinish(uint256 _pid) public view returns(bool)
+   判断是否完成
