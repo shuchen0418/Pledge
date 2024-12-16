@@ -11,7 +11,7 @@ let multiSignatureAddress = "0xcdC5A05A0A68401d5FCF7d136960CBa5aEa990Dd";
 
 async function main() {
 
-  const [deployerMax,,,,deployerMin] = await ethers.getSigners();
+    const [deployerMin,,,,deployerMax] = await ethers.getSigners();
 
   console.log(
     "Deploying contracts with the account:",

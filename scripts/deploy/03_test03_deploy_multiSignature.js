@@ -10,7 +10,7 @@ let threshold = 2;
 
 async function main() {
 
-  const [deployerMax,,,,deployerMin] = await ethers.getSigners();
+    const [deployerMin,,,,deployerMax] = await ethers.getSigners();
 
   console.log(
     "Deploying contracts with the account:",
