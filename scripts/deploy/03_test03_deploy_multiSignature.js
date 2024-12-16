@@ -2,9 +2,9 @@
 
 
 
-let multiSignatureAddress = ["0x481a65e50522602f6f920E6b797Df85b6182f948",
-                            "0x03fb15c1Bbe875f3869D7b5EAAEB31111deA876F",
-                            "0x3B720fBacd602bccd65F82c20F8ECD5Bbb295c0a"];
+let multiSignatureAddress = ["0x6240D5f65CB4827f8b1C4b79EB974675382fdcb0",
+                            "0x625Cb09431286bA5D28A6715aF05dc656A21644e",
+                            "0x01F7fBb6f70A67aeA3AC3d20aa728d1ad9E29C10"];
 let threshold = 2;
 
 
